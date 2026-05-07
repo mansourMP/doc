@@ -38,6 +38,18 @@ The next investment-readiness metric is not more architecture. It is 3-5 paying 
 
 `server_modules/vault_store.py` must not call OpenSSL with `-pass pass:{passphrase}`. Replace the subprocess fallback with in-process `cryptography` primitives or a passphrase path that never appears in `ps`, shell history, crash logs, or process arguments. Exit gate: encrypt/decrypt can run while `ps` cannot reveal a vault passphrase.
 
+### Certification Status: Security and Marketplace Proof (2026-05-07)
+
+This section is proof status, not a marketing claim. Empyralis should be presented as strongly isolated and actively hardened, not "100% secure."
+
+| Gate | Status | Evidence |
+|---|---|---|
+| Vault CLI secret exposure | PASS | `server_modules/vault_store.py` disables legacy OpenSSL CLI paths and uses in-process vault crypto; `server_modules/tests/test_vault_store.py` asserts no `subprocess`, `-pass`, or `pass:` path remains. |
+| RED memory stripping | PASS | `server_modules/workspace_context_memory_adapter.py` strips RED-classified context files, runtime memory, and recent logs before external model context; `server_modules/tests/test_sage_memory_red_stripping.py` covers prompt-context redaction. |
+| Cross-agent memory isolation | PASS | `server_modules/tests/test_cross_agent_memory_isolation.py` proves one agent cannot read another agent's private memory by default. |
+| Marketplace installability | PASS | `studio-proof-shop-assistant` is the first governed installable seed package, exposes proof metadata, and installs into the `template_catalog` surface. |
+| Remaining hardening | OPEN | Behavioral anomaly detection, semantic prompt-injection scoring, output sanitization, and per-session tool rate limiting remain launch-hardening work. |
+
 ## What Makes Empyralis Different (The Moat)
 
 ### 1. Durable Local Execution With Checkpoint/Resume
