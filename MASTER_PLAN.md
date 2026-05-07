@@ -20,10 +20,10 @@ These gates override feature breadth until the next investor demo. The platform 
 
 | Window | Gate | Exit condition |
 |---|---|---|
-| Day 1 | Security and reliability hard stops | Vault secrets are never exposed through process arguments; login, chat, and workspace bootstrap no longer fall into 500/warm-up loops under normal local/prod load |
+| Day 1 | Security and reliability hard stops | AST skill scanning, WebSocket payload limits, broker tool rate limits, anomaly circuit breakers, and login/bootstrap stability have fresh code-backed evidence |
 | Days 2-3 | Chat-first product path | User lands in Sage, can type within 3 seconds, sees one useful response, and never sees `USER.md`, `IDENTITY.md`, provider internals, or setup machinery |
 | Days 4-6 | One vertical proof agent | One shop/clinic/restaurant agent answers real customer questions from live catalog/FAQ data with governed channel setup |
-| Days 7-8 | Marketplace proof | At least one seed package is installable, not `preview_only`, with demo data, tests, pricing, and analytics |
+| Days 7-8 | Marketplace proof | Existing installable package is proven through install -> configure -> run -> analytics, with evidence a reviewer can replay |
 | Days 9-10 | Investor narrative | Demo script shows login -> Sage -> business agent -> live customer channel -> Activity proof -> billing path |
 
 ### Commercial Proof Gate
@@ -34,21 +34,9 @@ The next investment-readiness metric is not more architecture. It is 3-5 paying 
 
 `frontend/lib/workspace/workstation-chat-pane.tsx` must be split before adding more visible chat complexity. Extract the type definitions, composer state, stream/run state, provider status, memory/profile loaders, local-tool state, and activity/timeline projection into feature modules. This is a maintainability gate, not polish.
 
-### Security Hard Stop: Vault Secrets
+### Active Plan Rule
 
-`server_modules/vault_store.py` must not call OpenSSL with `-pass pass:{passphrase}`. Replace the subprocess fallback with in-process `cryptography` primitives or a passphrase path that never appears in `ps`, shell history, crash logs, or process arguments. Exit gate: encrypt/decrypt can run while `ps` cannot reveal a vault passphrase.
-
-### Certification Status: Security and Marketplace Proof (2026-05-07)
-
-This section is proof status, not a marketing claim. Empyralis should be presented as strongly isolated and actively hardened, not "100% secure."
-
-| Gate | Status | Evidence |
-|---|---|---|
-| Vault CLI secret exposure | PASS | `server_modules/vault_store.py` disables legacy OpenSSL CLI paths and uses in-process vault crypto; `server_modules/tests/test_vault_store.py` asserts no `subprocess`, `-pass`, or `pass:` path remains. |
-| RED memory stripping | PASS | `server_modules/workspace_context_memory_adapter.py` strips RED-classified context files, runtime memory, and recent logs before external model context; `server_modules/tests/test_sage_memory_red_stripping.py` covers prompt-context redaction. |
-| Cross-agent memory isolation | PASS | `server_modules/tests/test_cross_agent_memory_isolation.py` proves one agent cannot read another agent's private memory by default. |
-| Marketplace installability | PASS | `studio-proof-shop-assistant` is the first governed installable seed package, exposes proof metadata, and installs into the `template_catalog` surface. |
-| Remaining hardening | OPEN | Behavioral anomaly detection, semantic prompt-injection scoring, output sanitization, and per-session tool rate limiting remain launch-hardening work. |
+Completed fixes do not stay in the active plan. Vault CLI secret exposure, RED external-context stripping, cross-agent memory isolation, and the first installable marketplace package are closed proof items. Keep their evidence in tests, commits, and certification notes; do not spend investor-demo time rebuilding them.
 
 ### Combined Evaluator Priority Stack (2026-05-07)
 
@@ -57,21 +45,21 @@ This stack combines the venture-capital, senior-engineering, visionary-product, 
 | Priority | Owner | Work | Exit Gate |
 |---|---|---|---|
 | P0 | Backend/security lane | Fix security hard stops: AST-based skill scanner detection, WebSocket frame size/depth limits, per-session tool-call rate limiting, and behavioral anomaly circuit breakers. | A reviewer can see concrete code/tests for each hard stop, not just audit logging. |
-| P1 | Shared certification lane | Prove login -> workspace -> chat answer -> stop/retry, gateway connect/reconnect, and local + Render parity. | No warm-up loops, logout cascades, stuck thinking state, or raw backend text on the demo path. |
+| P1 | Reliability/certification lane | Prove login -> workspace -> chat answer -> stop/retry, gateway connect/reconnect, local + Render parity, and durable checkpoint/queue recovery after restart. | No warm-up loops, logout cascades, stuck thinking state, lost checkpoint work, or raw backend text on the demo path. |
 | P2 | Product UI lane | Split `workstation-chat-pane.tsx`, collapse Studio complexity, use visible "Chat" labels where users need clarity, and keep configuration behind progressive disclosure. | A non-technical buyer can start in chat, understand integrations, and create a useful specialist without learning architecture. |
-| P3 | Commercial proof lane | Ship Google Sheets live data, per-agent analytics, and approval-gated Stripe payment links. | A shop/support agent can answer from real data and show customer/revenue value. |
+| P3 | Commercial proof lane | Ship one vertical first: live data, per-agent analytics, and approval-gated Stripe payment links for a shop, dental office, or restaurant. | One paying-business workflow is demoable end to end before broader marketplace breadth. |
 | P4 | Platform completion lane | Add the broader skill pack, skill marketplace, skeleton/loading polish, mobile tab cleanup, virtual computer provisioning, and white-label embed. | Platform breadth grows only after the core investor path is certified. |
 
-#### Current Code-Checked Corrections
+#### Active Open Work
 
-| Claim | Current status | Evidence / next action |
+| Claim | Current status | Next action |
 |---|---|---|
-| Vault passphrase in process args | Fixed | `server_modules/vault_store.py` disables legacy OpenSSL CLI paths and uses in-process cryptography. Keep the regression test as a security cert. |
-| RED facts in external prompts | Fixed | `server_modules/workspace_context_memory_adapter.py` strips RED-classified memory/context before external provider context. Keep this in every prompt assembly path. |
 | Skill scanner regex bypass | Open | `server_modules/skill_scanner.py` is still regex-based. Add AST-aware Python detection for `eval`, `exec`, `os.system`, `subprocess`, dynamic `getattr`, and import obfuscation; add JS/TS parser or conservative token analysis for child process/network exfiltration. |
 | Gateway WebSocket DoS vector | Open | `server_modules/gateway_protocol_service.py` receives raw text frames on the WebSocket path. Add max frame bytes, JSON nesting limits, and bad-frame close codes before frame parsing does heavy work. |
 | Per-session tool abuse limits | Open | Quota/rate-limit services exist for HTTP, channels, and deployed-agent traffic, but no broker-level per-session tool-call circuit breaker was found in the `tool_broker.py` path. Add session/tool/action-class windows. |
 | Behavioral anomaly detection | Open | Audit events exist, but the platform needs a live circuit breaker for patterns such as repeated shell calls, unusual memory category reads, rapid connector writes, or cross-lane bridge attempts. |
+| Durable lane/checkpoint state | Open | `server_modules/runtime_lane_queue.py` uses in-memory `deque` state and `_GLOBAL_QUEUE`. Add a recoverable queue/checkpoint store so restart does not erase waiting/running work. |
+| Self-certification risk | Open | Every investor-critical pass needs a command, test, or live cert note with exact evidence. Avoid unsupported "done" claims. |
 
 #### Ownership Guardrails
 
@@ -400,20 +388,14 @@ OpenClaw reference: ClawHub (`clawhub` npm package)
 
 ### Business Infrastructure (4 items)
 
-**14. Marketplace Seed Packages**
-5-10 real, verified agent templates:
+**14. One Vertical Proof Package First**
+Do not spread the investor demo across 5-10 industries. Pick one and make it complete:
+
 1. "Shop Assistant" — inventory queries, order status, pricing
 2. "Dental Receptionist" — appointments, FAQs, insurance basics
 3. "Restaurant Order Taker" — menu, reservations, delivery status
-4. "Support Agent" — ticketing, knowledge base, escalation
-5. "Real Estate Agent" — property queries, viewing bookings
-6. "Hotel Concierge" — room info, amenities, local recommendations
-7. "E-commerce Assistant" — order tracking, returns, product questions
-8. "Medical Triage" — symptom checker, appointment routing
-9. "Legal Intake" — client info collection, document requests
-10. "Education Tutor" — subject Q&A, quiz creation, progress tracking
 
-Each seed package must be a customizable starting point, not a hard-limited vertical bot. Every seed should include: default persona, data schema, channel setup, tool/skill bundle, runtime recommendation, approval policy, demo data, golden test conversations, analytics events, and clear monetization model.
+The first package must include: default persona, live data schema, channel setup, tool/skill bundle, runtime recommendation, approval policy, demo data, golden test conversations, analytics events, pricing, and payment-link flow. Additional packages move to backlog until one vertical is demoable end to end.
 
 **15. Virtual Computer Provisioning**
 - One-click cloud VM for agents that need a full OS
@@ -435,14 +417,9 @@ Each seed package must be a customizable starting point, not a hard-limited vert
 - System prompts translated and optimized
 - Cultural context awareness per language
 
-### Tests (2 items)
+### Tests (1 item)
 
-**18. Cross-Agent Memory Isolation Test**
-- Create Agent A, write memory "secret_project_x"
-- Create Agent B, attempt to read Agent A's memory
-- Assert: Agent B gets empty result or permission denied
-
-**19. Gateway E2E Test**
+**18. Gateway E2E Test**
 - Start gateway process programmatically
 - Pair with mock cloud endpoint
 - Send message through a channel runtime
@@ -458,13 +435,13 @@ Each seed package must be a customizable starting point, not a hard-limited vert
 ## Build Order
 
 ```
-Phase A (Now — Trust):        Vault passphrase removal → runtime stability cert → command gating → RED facts stripping
-Phase B (Now — Demo):         Chat-first Sage path → one vertical proof agent → one non-preview marketplace package
-Phase C (Now — Studio ROI):   3 proof agents → live data connectors → analytics → hosted-credit billing
-Phase D (Now — Platform):     Skills port → Skill marketplace → Payment skills → Auto-learning → Handoff
-Phase E (Now — Frontend):     chat-pane split → shadcn/ui → Skeletons → UI polish → Mobile tabs → Analytics dashboard
-Phase F (After — Business):   Marketplace seeds → Virtual computer → White-label embed → Multi-language
-Phase G (After — Tests):      Memory isolation → Gateway E2E
+Phase A (Now — Trust):        AST skill scanner → WebSocket limits → broker rate limits → anomaly circuit breakers
+Phase B (Now — Reliability):  login/bootstrap cert → chat stop/retry cert → durable queue/checkpoint store
+Phase C (Now — Demo):         chat-first Sage path → one vertical proof agent → marketplace install-to-run cert
+Phase D (Now — Studio ROI):   live data connector → analytics → hosted-credit billing → approval-gated payment links
+Phase E (Now — Frontend):     chat-pane split → skeletons → UI polish → mobile/web parity
+Phase F (After — Platform):   Skills port → Skill marketplace → Auto-learning → Handoff → Virtual computer
+Phase G (After — Business):   More marketplace seeds → White-label embed → Multi-language
 Phase H (Gate):               Compatibility audit → Cleanup
 ```
 
