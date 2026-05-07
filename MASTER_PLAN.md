@@ -50,6 +50,37 @@ This section is proof status, not a marketing claim. Empyralis should be present
 | Marketplace installability | PASS | `studio-proof-shop-assistant` is the first governed installable seed package, exposes proof metadata, and installs into the `template_catalog` surface. |
 | Remaining hardening | OPEN | Behavioral anomaly detection, semantic prompt-injection scoring, output sanitization, and per-session tool rate limiting remain launch-hardening work. |
 
+### Combined Evaluator Priority Stack (2026-05-07)
+
+This stack combines the venture-capital, senior-engineering, visionary-product, and security-review feedback with current code checks. Treat this as the execution order until the investor demo is certified.
+
+| Priority | Owner | Work | Exit Gate |
+|---|---|---|---|
+| P0 | Backend/security lane | Fix security hard stops: AST-based skill scanner detection, WebSocket frame size/depth limits, per-session tool-call rate limiting, and behavioral anomaly circuit breakers. | A reviewer can see concrete code/tests for each hard stop, not just audit logging. |
+| P1 | Shared certification lane | Prove login -> workspace -> chat answer -> stop/retry, gateway connect/reconnect, and local + Render parity. | No warm-up loops, logout cascades, stuck thinking state, or raw backend text on the demo path. |
+| P2 | Product UI lane | Split `workstation-chat-pane.tsx`, collapse Studio complexity, use visible "Chat" labels where users need clarity, and keep configuration behind progressive disclosure. | A non-technical buyer can start in chat, understand integrations, and create a useful specialist without learning architecture. |
+| P3 | Commercial proof lane | Ship Google Sheets live data, per-agent analytics, and approval-gated Stripe payment links. | A shop/support agent can answer from real data and show customer/revenue value. |
+| P4 | Platform completion lane | Add the broader skill pack, skill marketplace, skeleton/loading polish, mobile tab cleanup, virtual computer provisioning, and white-label embed. | Platform breadth grows only after the core investor path is certified. |
+
+#### Current Code-Checked Corrections
+
+| Claim | Current status | Evidence / next action |
+|---|---|---|
+| Vault passphrase in process args | Fixed | `server_modules/vault_store.py` disables legacy OpenSSL CLI paths and uses in-process cryptography. Keep the regression test as a security cert. |
+| RED facts in external prompts | Fixed | `server_modules/workspace_context_memory_adapter.py` strips RED-classified memory/context before external provider context. Keep this in every prompt assembly path. |
+| Skill scanner regex bypass | Open | `server_modules/skill_scanner.py` is still regex-based. Add AST-aware Python detection for `eval`, `exec`, `os.system`, `subprocess`, dynamic `getattr`, and import obfuscation; add JS/TS parser or conservative token analysis for child process/network exfiltration. |
+| Gateway WebSocket DoS vector | Open | `server_modules/gateway_protocol_service.py` receives raw text frames on the WebSocket path. Add max frame bytes, JSON nesting limits, and bad-frame close codes before frame parsing does heavy work. |
+| Per-session tool abuse limits | Open | Quota/rate-limit services exist for HTTP, channels, and deployed-agent traffic, but no broker-level per-session tool-call circuit breaker was found in the `tool_broker.py` path. Add session/tool/action-class windows. |
+| Behavioral anomaly detection | Open | Audit events exist, but the platform needs a live circuit breaker for patterns such as repeated shell calls, unusual memory category reads, rapid connector writes, or cross-lane bridge attempts. |
+
+#### Ownership Guardrails
+
+- Agent 1 owns P0 backend/security hard stops, P3 commercial proof, and evidence docs.
+- Agent 2 owns P2 visible product UI, gateway UX presentation, and mobile/web visual parity.
+- P1 certification is shared, but each agent certifies only the surfaces it owns.
+- Do not globally rename backend concepts for UI clarity. Prefer visible labels and aliases while preserving internal contracts, audit keys, and route compatibility.
+- Do not add feature breadth until P0 and P1 have fresh pass/fail evidence.
+
 ## What Makes Empyralis Different (The Moat)
 
 ### 1. Durable Local Execution With Checkpoint/Resume
